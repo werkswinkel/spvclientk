@@ -2,6 +2,7 @@ package twostack.org
 
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
+import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -48,7 +49,7 @@ suspend fun main() {
                         receiveChannel.readFully(payloadBytes, 0, header.payloadSize.toInt())
 
                         //dispatch the message-specific payload read
-                        handleMessage(header, payloadBytes)
+                        handleMessage(writeChannel, header, payloadBytes)
 
                     }
                 }
@@ -69,14 +70,23 @@ suspend fun main() {
 
 }
 
-fun handleMessage(header: MessageHeader, payload: ByteArray) {
+fun handleMessage(writeChannel: ByteWriteChannel, header: MessageHeader, payload: ByteArray) {
 
-    when (header.commandString) {
-        MessageHeader.VERSION -> println("version message")
-        MessageHeader.VERSION_ACK -> println("verack message")
-        MessageHeader.SENDHEADERS -> println("sendheaders message")
-        MessageHeader.GET_HEADERS -> println("getheaders message")
-        MessageHeader.GET_ADDR -> println("getaddress message")
+    runBlocking {
+        when (header.commandString) {
+            MessageHeader.VERSION -> {
+                println("version message")
+                val response = MessageHeader(RegTestParams.MAGIC_BYTES, MessageHeader.VERSION_ACK)
+                writeChannel.writeFully(response.serialize(ByteArray(0)))
+            }
+            MessageHeader.VERSION_ACK -> println("verack message")
+            MessageHeader.SENDHEADERS -> println("sendheaders message")
+            MessageHeader.GET_HEADERS -> println("getheaders message")
+            MessageHeader.GET_ADDR -> println("getaddress message")
+            MessageHeader.PING -> println("ping message")
+            MessageHeader.PONG -> println("pong message")
+            MessageHeader.FEE_FILTER -> println("feefilter message")
+        }
     }
 }
 

@@ -7,15 +7,9 @@ import java.net.InetAddress
 
 class PeerAddress(val addr: InetAddress, val port: Int) {
 
-    val MESSAGE_SIZE = 30
-
-//    private val hostname : String? = null //used for .onion addresses
     private val services: BigInteger = BigInteger.ZERO
     private val timestamp: Long = Utils.currentTimeMillis()
 
-    /*
-       common to Messages ?
-     */
 
     private var protocolVersion: Int = 0
 
