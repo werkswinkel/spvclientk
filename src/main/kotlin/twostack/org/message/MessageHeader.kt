@@ -27,7 +27,11 @@ import java.util.*
  *                                          messages, the checksum is always 0x5df6e0e2 (SHA256(SHA256(<empty string>))).
  *                                          -----------------------------------
  */
-class MessageHeader(val magicBytes: UInt, val commandString: String, val payloadSize: UInt = 0u, val checksum: UInt = 0u) {
+class MessageHeader(val magicBytes: UInt, val commandString: String) {
+
+    var payloadSize: UInt = 0u
+    var checksum: UInt = 0u
+
     companion object {
 
         const val VERSION = "version"
@@ -72,7 +76,10 @@ class MessageHeader(val magicBytes: UInt, val commandString: String, val payload
             //checksum
             val checksum = readUint32(headerStream.readNBytes(4), 0)
 
-            return MessageHeader(magicBytes.toUInt(), commandString, payloadSize.toUInt(), checksum.toUInt())
+            val header = MessageHeader(magicBytes.toUInt(), commandString)
+            header.setPayloadParams(checksum.toUInt(), payloadSize.toUInt())
+
+            return header;
         }
 
     }
@@ -83,7 +90,7 @@ class MessageHeader(val magicBytes: UInt, val commandString: String, val payload
 
 
 
-    fun serialize(payload: ByteArray): ByteArray {
+    fun serialize(): ByteArray {
         val headerByteStream = ByteArrayOutputStream()
 
         //magic
@@ -97,18 +104,30 @@ class MessageHeader(val magicBytes: UInt, val commandString: String, val payload
         headerByteStream.writeBytes(command)
 
         //payload size
-        Utils.uint32ToByteStreamLE(payload.size.toLong(), headerByteStream)
+        Utils.uint32ToByteStreamLE(payloadSize.toLong(), headerByteStream)
 
         //first 4 bytes of payload's checksum
-        val checksum = Sha256Hash.hashTwice(payload)
-        Utils.uint32ToByteStreamLE(Utils.readUint32(checksum, 0), headerByteStream)
+        Utils.uint32ToByteStreamLE(checksum.toLong(), headerByteStream)
 
         //FIXME: Payload append should move out
-        headerByteStream.writeBytes(payload)
+//        headerByteStream.writeBytes(payload)
 
         val finalBuf = headerByteStream.toByteArray()
         println(HEX.encode(finalBuf))
         return finalBuf
+    }
+
+    fun setPayloadParams(checksum: UInt, payloadSize: UInt) {
+
+        //payload size
+        this.payloadSize = payloadSize
+
+        //first 4 bytes of payload hash is our checksum
+        this.checksum = checksum
+    }
+
+    fun setPayloadParams(payloadHash: ByteArray, payloadSize: UInt) {
+       setPayloadParams(readUint32(payloadHash, 0).toUInt(), payloadSize)
     }
 
 

@@ -6,9 +6,14 @@ import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.twostack.bitcoin4j.Utils.HEX
+import org.twostack.bitcoin4j.Sha256Hash
+import org.twostack.bitcoin4j.Utils
+import org.twostack.bitcoin4j.Utils.*
 import twostack.org.message.GetHeaderRequest
 import twostack.org.message.MessageHeader
+import twostack.org.message.pong.PongMessage
+import twostack.org.message.pong.PongPayload
+import twostack.org.message.version.VersionMessage
 import twostack.org.message.version.VersionPayload
 import twostack.org.net.RegTestParams
 import java.io.ByteArrayOutputStream
@@ -59,9 +64,9 @@ suspend fun main() {
 
         //start the handshake
         val versionPayload = VersionPayload(RegTestParams());
-        val versionBuffer = versionPayload.serialize()
-        val versionMessage = MessageHeader(RegTestParams.MAGIC_BYTES, MessageHeader.VERSION).serialize(versionBuffer)
-        writeChannel.writeFully(versionMessage, 0, versionMessage.size)
+        val versionMessage = VersionMessage(versionPayload)
+        val versionBuffer = versionMessage.serialize()
+        writeChannel.writeFully(versionBuffer, 0, versionBuffer.size)
 
 //        val messageRequest = GetHeaderRequest().serialize()
 //        val headerMessage = MessageHeader(MessageHeader.GET_HEADERS).serialize(messageRequest, )
@@ -77,13 +82,20 @@ fun handleMessage(writeChannel: ByteWriteChannel, header: MessageHeader, payload
             MessageHeader.VERSION -> {
                 println("version message")
                 val response = MessageHeader(RegTestParams.MAGIC_BYTES, MessageHeader.VERSION_ACK)
-                writeChannel.writeFully(response.serialize(ByteArray(0)))
+                response.setPayloadParams(Sha256Hash.hashTwice(ByteArray(0)), 0u)
+                writeChannel.writeFully(response.serialize())
             }
             MessageHeader.VERSION_ACK -> println("verack message")
             MessageHeader.SENDHEADERS -> println("sendheaders message")
             MessageHeader.GET_HEADERS -> println("getheaders message")
             MessageHeader.GET_ADDR -> println("getaddress message")
-            MessageHeader.PING -> println("ping message")
+            MessageHeader.PING -> {
+                println("responding to ping with a pong")
+                val nonce = readInt64(payload, 0)
+                val pongMessage = PongMessage(PongPayload(nonce))
+                writeChannel.writeFully(pongMessage.serialize())
+
+            }
             MessageHeader.PONG -> println("pong message")
             MessageHeader.FEE_FILTER -> println("feefilter message")
         }
