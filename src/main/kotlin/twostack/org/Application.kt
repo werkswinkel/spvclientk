@@ -7,10 +7,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.twostack.bitcoin4j.Sha256Hash
+import org.twostack.bitcoin4j.Utils
 import org.twostack.bitcoin4j.Utils.*
 import twostack.org.message.MessageHeader
 import twostack.org.message.getheaders.GetHeadersMessage
 import twostack.org.message.getheaders.GetHeadersPayload
+import twostack.org.message.headers.BlockHeaderPayload
+import twostack.org.message.inventory.InventoryPayload
 import twostack.org.message.pong.PongMessage
 import twostack.org.message.pong.PongPayload
 import twostack.org.message.version.VersionMessage
@@ -52,6 +55,13 @@ suspend fun main() {
                         val payloadBytes = ByteArray(header.payloadSize.toInt())
                         receiveChannel.readFully(payloadBytes, 0, header.payloadSize.toInt())
 
+                        //look at checksum
+                        val checksum = Sha256Hash.hashTwice(payloadBytes)
+//                        println("Payload Checksum : ${Utils.readUint32(checksum, 0)}")
+//                        println("header Checksum : ${header.checksum}")
+                        if(header.checksum.toLong() == Utils.readUint32(checksum, 0)) {
+                            println("YAY! Header checksums match!")
+                        }
                         //dispatch the message-specific payload read
                         handleMessage(writeChannel, header, payloadBytes)
 
@@ -89,8 +99,13 @@ fun handleMessage(writeChannel: ByteWriteChannel, header: MessageHeader, payload
             MessageHeader.SENDHEADERS -> println("sendheaders message")
             MessageHeader.GET_HEADERS -> println("getheaders message")
             MessageHeader.HEADERS -> {
+
+                val blockHeaders = BlockHeaderPayload.fromByteArray(payload)
+
+//                println("first block : ${HEX.encode(blockHeaders.items.get(0))}")
                 println("receiving message hashes ")
                 println(HEX.encode(payload))
+
             }
             MessageHeader.GET_ADDR -> println("getaddress message")
             MessageHeader.PING -> {
