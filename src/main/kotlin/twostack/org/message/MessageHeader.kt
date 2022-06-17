@@ -3,7 +3,9 @@ package twostack.org.message
 import org.twostack.bitcoin4j.Sha256Hash
 import org.twostack.bitcoin4j.Utils
 import org.twostack.bitcoin4j.Utils.*
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.util.*
 
 /**
  * 4 bytes  | start string  |  char[4]  |   Magic bytes indicating the originating network;
@@ -25,39 +27,89 @@ import java.io.ByteArrayOutputStream
  *                                          messages, the checksum is always 0x5df6e0e2 (SHA256(SHA256(<empty string>))).
  *                                          -----------------------------------
  */
-class MessageHeader {
+class MessageHeader(val magicBytes: UInt, val commandString: String, val payloadSize: UInt = 0u, val checksum: UInt = 0u) {
+    companion object {
 
-    private var magicBytes : UInt = 0xfabfb5dau; //RegTest Magic Bytes
-//        0x0b110907u; //testnet3
-    private var command : ByteArray = ByteArray(12)
-    private var commandString = "version"
-//    private var payload : UInt = 0u
-    private var checksum : ByteArray = ByteArray(4)
+        const val VERSION = "version"
+        const val INVENTORY = "inv"
+        const val BLOCK = "block"
+        const val MERKLE_BLOCK = "merkleblock"
+        const val GET_DATA = "getdata"
+        const val GET_BLOCKS = "getblocks"
+        const val GET_HEADERS = "getheaders"
+        const val TRANSACTION = "tx"
+        const val ADDRRESS = "addr"
+        const val PING = "ping"
+        const val PONG = "pong"
+        const val VERSION_ACK = "verack"
+        const val HEADERS = "headers"
+        const val ALERT = "alert"
+        const val FILTER_LOAD = "filterload"
+        const val NOT_FOUND = "notfound"
+        const val MEMPOOL = "mempool"
+        const val REJECT = "reject"
+        const val UTXOS = "utxos"
+        const val GET_UTXOS = "getutxos"
+        const val SENDHEADERS = "sendheaders"
+        const val FEE_FILTER = "feefilter"
+        const val GET_ADDR = "getaddr"
 
-    fun serialize(payload: ByteArray) : ByteArray{
+        fun fromByteArray(headerBytes : ByteArray ): MessageHeader {
+            val headerStream = ByteArrayInputStream(headerBytes)
+
+            //magic
+            val magicBytes = readUint32(headerStream.readNBytes(4), 0)
+
+            //command
+            val commandBytes = headerStream.readNBytes(12)
+            val scanner = Scanner(ByteArrayInputStream(commandBytes), Charsets.UTF_8)
+            scanner.useDelimiter("\u0000")
+            val commandString = scanner.next()
+
+            //payload
+            val payloadSize = readUint32(headerStream.readNBytes(4), 0)
+
+            //checksum
+            val checksum = readUint32(headerStream.readNBytes(4), 0)
+
+            return MessageHeader(magicBytes.toUInt(), commandString, payloadSize.toUInt(), checksum.toUInt())
+        }
+
+    }
+
+    fun hasPayload(): Boolean {
+        return payloadSize > 0u
+    }
+
+
+
+    fun serialize(payload: ByteArray): ByteArray {
         val headerByteStream = ByteArrayOutputStream()
 
-//        headerByteStream.writeBytes(magicBytes)
+        //magic
         uint32ToByteStreamLE(magicBytes.toLong(), headerByteStream)
 
-        //FIXME: also restrict to absolute length of (command.size) which is 12
+        //command
+        var command: ByteArray = ByteArray(12)
         for (i in 0..commandString.length - 1) {
-           command[i] = (commandString.codePointAt(i) and 0xFF).toByte()
+            command[i] = (commandString.codePointAt(i) and 0xFF).toByte()
         }
         headerByteStream.writeBytes(command)
 
-        checksum = Sha256Hash.hashTwice(payload)
+        //payload size
         Utils.uint32ToByteStreamLE(payload.size.toLong(), headerByteStream)
-//        headerByteStream.write(checksum, 0, 4)
+
+        //first 4 bytes of payload's checksum
+        val checksum = Sha256Hash.hashTwice(payload)
         Utils.uint32ToByteStreamLE(Utils.readUint32(checksum, 0), headerByteStream)
 
+        //FIXME: Payload append should move out
         headerByteStream.writeBytes(payload)
 
         val finalBuf = headerByteStream.toByteArray()
         println(HEX.encode(finalBuf))
         return finalBuf
     }
-
 
 
 }

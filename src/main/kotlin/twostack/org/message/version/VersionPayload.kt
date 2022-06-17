@@ -1,15 +1,16 @@
-package twostack.org.message
+package twostack.org.message.version
 
 import org.twostack.bitcoin4j.Utils
 import org.twostack.bitcoin4j.VarInt
+import twostack.org.message.MessagePayload
+import twostack.org.message.PeerAddress
 import twostack.org.net.P2PNetworkParameters
 import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.math.BigInteger
 import java.net.InetAddress
 import java.net.UnknownHostException
 
-class VersionMessage(netParams : P2PNetworkParameters) {
+class VersionPayload(netParams : P2PNetworkParameters) : MessagePayload(){
 
     /**
      * The version number of the protocol spoken.

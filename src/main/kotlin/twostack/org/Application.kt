@@ -2,15 +2,15 @@ package twostack.org
 
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
-import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.twostack.bitcoin4j.Utils.HEX
 import twostack.org.message.GetHeaderRequest
 import twostack.org.message.MessageHeader
-import twostack.org.message.VersionMessage
+import twostack.org.message.version.VersionPayload
 import twostack.org.net.RegTestParams
+import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 
 suspend fun main() {
@@ -23,33 +23,60 @@ suspend fun main() {
         val selectorManager = SelectorManager(Dispatchers.IO)
         val socket = aSocket(selectorManager).tcp().connect("127.0.0.1", 18444)
 
-        val versionMessage = VersionMessage(RegTestParams());
 
         val writeChannel = socket.openWriteChannel(true)
         val receiveChannel = socket.openReadChannel()
 
+        var headerCursor = 0
+        var payloadCursor = 0
         launch(Dispatchers.IO) {
+            val headerStream = ByteArrayOutputStream()
+            val payloadStream = ByteArrayOutputStream()
+            var header: MessageHeader
             while (true) {
-                val count = receiveChannel.availableForRead
-                if (count > 0) {
-                    val buff = ByteBuffer.allocate(count)
-                    receiveChannel.readAvailable(buff)
+                if (receiveChannel.availableForRead > 0) {
+                    // read the 24-byte header
+                    val headerBytes = ByteArray(24)
+                    receiveChannel.readFully(headerBytes, 0, 24)
 
-                    println(HEX.encode(buff.array()))
+                    //deserialize the header
+                    header = MessageHeader.fromByteArray(headerBytes)
+
+                    if (header.hasPayload()) {
+                        //read the payload bytes as specified by the header
+                        val payloadBytes = ByteArray(header.payloadSize.toInt())
+                        receiveChannel.readFully(payloadBytes, 0, header.payloadSize.toInt())
+
+                        //dispatch the message-specific payload read
+                        handleMessage(header, payloadBytes)
+
+                    }
                 }
+
             }
         }
 
-        //write something
+        //start the handshake
+        val versionPayload = VersionPayload(RegTestParams());
+        val versionBuffer = versionPayload.serialize()
+        val versionMessage = MessageHeader(RegTestParams.MAGIC_BYTES, MessageHeader.VERSION).serialize(versionBuffer)
+        writeChannel.writeFully(versionMessage, 0, versionMessage.size)
 
-//    val messageRequest = GetHeaderRequest().serialize()
-
-//    println(HEX.encode(finalMessage))
-
-        val buf = versionMessage.serialize()
-        val finalMessage = MessageHeader().serialize(buf)
-        writeChannel.writeFully(finalMessage, 0, finalMessage.size )
+//        val messageRequest = GetHeaderRequest().serialize()
+//        val headerMessage = MessageHeader(MessageHeader.GET_HEADERS).serialize(messageRequest, )
 
     }
 
 }
+
+fun handleMessage(header: MessageHeader, payload: ByteArray) {
+
+    when (header.commandString) {
+        MessageHeader.VERSION -> println("version message")
+        MessageHeader.VERSION_ACK -> println("verack message")
+        MessageHeader.SENDHEADERS -> println("sendheaders message")
+        MessageHeader.GET_HEADERS -> println("getheaders message")
+        MessageHeader.GET_ADDR -> println("getaddress message")
+    }
+}
+
