@@ -1,4 +1,4 @@
-package twostack.org.message
+package twostack.org.message.getheaders
 
 import org.twostack.bitcoin4j.Utils
 import org.twostack.bitcoin4j.VarInt
@@ -14,7 +14,7 @@ import java.io.ByteArrayOutputStream
                                             called the transaction count, but because the headers message doesn’t
                                             include any transactions, the transaction count is always zero.
  */
-class GetHeaderRequest {
+class GetHeadersPayload {
 
 //    val version : UInt = 70001u
     val hashCount : UInt = 1u //request one
@@ -28,7 +28,7 @@ class GetHeaderRequest {
         Utils.uint32ToByteStreamLE(0, out)
 
 //        out.write(version.toInt())
-        out.write(VarInt(hashCount.toLong()).encode())
+        out.write(VarInt(hashCount.toLong()).encode()) //number of hashes
         out.writeBytes(hashes) //need to reverse actual bytes for little endian write
         out.writeBytes(stopHash)
 

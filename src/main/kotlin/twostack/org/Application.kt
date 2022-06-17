@@ -7,17 +7,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.twostack.bitcoin4j.Sha256Hash
-import org.twostack.bitcoin4j.Utils
 import org.twostack.bitcoin4j.Utils.*
-import twostack.org.message.GetHeaderRequest
 import twostack.org.message.MessageHeader
+import twostack.org.message.getheaders.GetHeadersMessage
+import twostack.org.message.getheaders.GetHeadersPayload
 import twostack.org.message.pong.PongMessage
 import twostack.org.message.pong.PongPayload
 import twostack.org.message.version.VersionMessage
 import twostack.org.message.version.VersionPayload
 import twostack.org.net.RegTestParams
 import java.io.ByteArrayOutputStream
-import java.nio.ByteBuffer
 
 suspend fun main() {
 //    embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
@@ -81,6 +80,7 @@ fun handleMessage(writeChannel: ByteWriteChannel, header: MessageHeader, payload
         when (header.commandString) {
             MessageHeader.VERSION -> {
                 println("version message")
+                //The verack response has no payload, and only sets the command in header
                 val response = MessageHeader(RegTestParams.MAGIC_BYTES, MessageHeader.VERSION_ACK)
                 response.setPayloadParams(Sha256Hash.hashTwice(ByteArray(0)), 0u)
                 writeChannel.writeFully(response.serialize())
@@ -88,12 +88,20 @@ fun handleMessage(writeChannel: ByteWriteChannel, header: MessageHeader, payload
             MessageHeader.VERSION_ACK -> println("verack message")
             MessageHeader.SENDHEADERS -> println("sendheaders message")
             MessageHeader.GET_HEADERS -> println("getheaders message")
+            MessageHeader.HEADERS -> {
+                println("receiving message hashes ")
+                println(HEX.encode(payload))
+            }
             MessageHeader.GET_ADDR -> println("getaddress message")
             MessageHeader.PING -> {
                 println("responding to ping with a pong")
                 val nonce = readInt64(payload, 0)
                 val pongMessage = PongMessage(PongPayload(nonce))
                 writeChannel.writeFully(pongMessage.serialize())
+
+                //also send a getHeaders message for now
+                val headerMessage = GetHeadersMessage(GetHeadersPayload())
+                writeChannel.writeFully(headerMessage.serialize())
 
             }
             MessageHeader.PONG -> println("pong message")
