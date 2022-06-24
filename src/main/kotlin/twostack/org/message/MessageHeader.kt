@@ -113,7 +113,7 @@ class MessageHeader(val magicBytes: UInt, val commandString: String) {
 //        headerByteStream.writeBytes(payload)
 
         val finalBuf = headerByteStream.toByteArray()
-        println(HEX.encode(finalBuf))
+//        println(HEX.encode(finalBuf))
         return finalBuf
     }
 

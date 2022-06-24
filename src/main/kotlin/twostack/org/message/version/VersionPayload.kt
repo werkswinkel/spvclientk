@@ -90,6 +90,8 @@ class VersionPayload(netParams : P2PNetworkParameters) : MessagePayload(){
 
         // Size of known block chain.
         Utils.uint32ToByteStreamLE(bestHeight, buf)
+
+        //
         buf.write(if (relayTxesBeforeFilter) 1 else 0)
 
         return buf.toByteArray()
