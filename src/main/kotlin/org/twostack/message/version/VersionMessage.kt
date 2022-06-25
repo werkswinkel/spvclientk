@@ -2,14 +2,15 @@ package org.twostack.message.version
 
 import org.twostack.bitcoin4j.Sha256Hash
 import org.twostack.message.MessageHeader
+import org.twostack.message.P2PMessage
 import org.twostack.net.RegTestParams
 import java.io.ByteArrayOutputStream
 
-class VersionMessage(val versionPayload : VersionPayload) {
+class VersionMessage(val versionPayload : VersionPayload): P2PMessage {
 
     private val header = MessageHeader(RegTestParams.MAGIC_BYTES, MessageHeader.VERSION)
 
-    fun serialize() : ByteArray{
+    override fun serialize() : ByteArray{
         val versionBuffer = versionPayload.serialize()
 
         //update the header checksum and payload size

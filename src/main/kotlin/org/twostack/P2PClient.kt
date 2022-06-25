@@ -9,6 +9,7 @@ import kotlinx.coroutines.runBlocking
 import org.twostack.bitcoin4j.Sha256Hash
 import org.twostack.bitcoin4j.Utils
 import org.twostack.message.MessageHeader
+import org.twostack.message.P2PMessage
 import org.twostack.message.headers.BlockHeaderPayload
 import org.twostack.message.pong.PongMessage
 import org.twostack.message.pong.PongPayload
@@ -19,26 +20,30 @@ import java.io.ByteArrayOutputStream
 
 class P2PClient(val remoteHost: String, val remotePort: Int) {
 
+    private var writeChannel : ByteWriteChannel? = null
+    private var receiveChannel : ByteReadChannel? = null
+
     suspend fun start(){
         runBlocking{
 
             val selectorManager = SelectorManager(Dispatchers.IO)
             val socket = aSocket(selectorManager).tcp().connect(remoteHost, remotePort)
 
-            val writeChannel = socket.openWriteChannel(true)
-            val receiveChannel = socket.openReadChannel()
+            writeChannel = socket.openWriteChannel(true)
+            receiveChannel = socket.openReadChannel()
 
-            var headerCursor = 0
-            var payloadCursor = 0
+//            var headerCursor = 0
+//            var payloadCursor = 0
             launch(Dispatchers.IO) {
-                val headerStream = ByteArrayOutputStream()
-                val payloadStream = ByteArrayOutputStream()
+//                val headerStream = ByteArrayOutputStream()
+//                val payloadStream = ByteArrayOutputStream()
                 var header: MessageHeader
                 while (true) {
-                    if (receiveChannel.availableForRead > 0) {
+                    val availableBytes = receiveChannel?.availableForRead ?: 0
+                    if (availableBytes > 0 ) {
                         // read the 24-byte header
                         val headerBytes = ByteArray(24)
-                        receiveChannel.readFully(headerBytes, 0, 24)
+                        receiveChannel?.readFully(headerBytes, 0, 24)
 
                         //deserialize the header
                         header = MessageHeader.fromByteArray(headerBytes)
@@ -46,7 +51,7 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
                         if (header.hasPayload()) {
                             //read the payload bytes as specified by the header
                             val payloadBytes = ByteArray(header.payloadSize.toInt())
-                            receiveChannel.readFully(payloadBytes, 0, header.payloadSize.toInt())
+                            receiveChannel?.readFully(payloadBytes, 0, header.payloadSize.toInt())
 
                             //look at checksum
                             val checksum = Sha256Hash.hashTwice(payloadBytes)
@@ -65,24 +70,31 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
             //start the handshake
             val versionPayload = VersionPayload(RegTestParams());
             val versionMessage = VersionMessage(versionPayload)
-            val versionBuffer = versionMessage.serialize()
-            writeChannel.writeFully(versionBuffer, 0, versionBuffer.size)
+//            val versionBuffer = versionMessage.serialize()
+//            writeChannel?.writeFully(versionBuffer, 0, versionBuffer.size)
+            sendMessage(versionMessage)
 
         }
 
     }
 
-    suspend fun handleMessage(writeChannel: ByteWriteChannel, header: MessageHeader, payload: ByteArray) {
+    suspend fun sendMessage(message: P2PMessage){
+        val messageBuffer = message.serialize()
+        if (messageBuffer.isNotEmpty()) {
+            writeChannel?.writeFully(messageBuffer, 0, messageBuffer.size)
+        }
+    }
+
+    suspend fun handleMessage(writeChannel: ByteWriteChannel?, header: MessageHeader, payload: ByteArray) {
 
         runBlocking {
-            println("received new message : ${header.commandString}")
             when (header.commandString) {
                 MessageHeader.VERSION -> {
                     println("version message")
                     //The verack response has no payload, and only sets the command in header
                     val response = MessageHeader(RegTestParams.MAGIC_BYTES, MessageHeader.VERSION_ACK)
                     response.setPayloadParams(Sha256Hash.hashTwice(ByteArray(0)), 0u)
-                    writeChannel.writeFully(response.serialize())
+                    writeChannel?.writeFully(response.serialize())
                 }
                 MessageHeader.VERSION_ACK -> println("verack message")
                 MessageHeader.SENDHEADERS -> println("sendheaders message")
@@ -106,7 +118,8 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
                     println("responding to ping with a pong")
                     val nonce = Utils.readInt64(payload, 0)
                     val pongMessage = PongMessage(PongPayload(nonce))
-                    writeChannel.writeFully(pongMessage.serialize())
+                    sendMessage(pongMessage)
+//                    writeChannel?.writeFully(pongMessage.serialize())
 
 //                    //also send a getHeaders message for now
 //                    val headerMessage = GetHeadersMessage(GetHeadersPayload())
@@ -137,6 +150,9 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
                 }
                 MessageHeader.FEE_FILTER -> {
                     println("received a fee filter message")
+                }
+                else -> {
+                    println("I don't understand that message: ${header.commandString}")
                 }
             }
         }

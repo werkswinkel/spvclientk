@@ -3,10 +3,11 @@ package org.twostack.message.getheaders
 import org.twostack.bitcoin4j.Sha256Hash
 import org.twostack.bitcoin4j.Utils
 import org.twostack.message.MessageHeader
+import org.twostack.message.P2PMessage
 import org.twostack.net.RegTestParams
 import java.io.ByteArrayOutputStream
 
-class GetHeadersMessage(val payload: GetHeadersPayload) {
+class GetHeadersMessage(val payload: GetHeadersPayload) : P2PMessage{
     private val header = MessageHeader(RegTestParams.MAGIC_BYTES, MessageHeader.GET_HEADERS)
 
 
@@ -17,7 +18,7 @@ class GetHeadersMessage(val payload: GetHeadersPayload) {
         }
     }
 
-    fun serialize(): ByteArray {
+    override fun serialize(): ByteArray {
         val headerBuffer = payload.serialize()
 
         header.setPayloadParams(Sha256Hash.hashTwice(headerBuffer), headerBuffer.size.toUInt())

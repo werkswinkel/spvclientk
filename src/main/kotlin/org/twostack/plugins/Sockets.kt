@@ -11,9 +11,15 @@ import java.util.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.request.*
+import kotlinx.coroutines.async
+import org.twostack.P2PClient
 
 fun Application.configureSockets() {
 
+    val client = P2PClient("127.0.0.1", 18444)
+    async {
+        client.start()
+    }
 
 }
 
