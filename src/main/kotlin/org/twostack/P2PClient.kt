@@ -121,18 +121,6 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
                     sendMessage(pongMessage)
 //                    writeChannel?.writeFully(pongMessage.serialize())
 
-//                    //also send a getHeaders message for now
-//                    val headerMessage = GetHeadersMessage(GetHeadersPayload())
-//                    writeChannel.writeFully(headerMessage.serialize())
-
-
-                    //followed by a getdata message
-//                    val inventory = Inventory(InventoryType.MSG_FILTERED_BLOCK, HEX.decode("74abe123d6cccb7310c6ddde974d26dc0c08fe0358d1688deada2f9a68ff18fb").reversedArray())
-////                    val inventory = Inventory(InventoryType.MSG_TX, HEX.decode("678940c939f372e86028b17dfaddacccdb5b8dc3338ae15ea0130acd91fb6eff").reversedArray())
-//                    val invItems = listOf<Inventory>(inventory)
-//                    val invPayload = InventoryPayload(invItems)
-//                    val getDataMessage = GetDataMessage(invPayload)
-//                    writeChannel.writeFully(getDataMessage.serialize())
 
                 }
                 MessageHeader.PONG -> println("pong message")

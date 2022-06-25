@@ -1,6 +1,7 @@
 package org.twostack
 
 import io.ktor.server.application.*
+import kotlinx.coroutines.async
 import org.twostack.plugins.configureRouting
 import org.twostack.plugins.configureSerialization
 import org.twostack.plugins.configureSockets
@@ -18,7 +19,13 @@ import org.twostack.plugins.configureSockets
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
 fun Application.module(){
-    configureRouting()
+
+    val client = P2PClient("127.0.0.1", 18444)
+    async {
+        client.start()
+    }
+
+    configureRouting(client)
     configureSerialization()
     configureSockets()
 }

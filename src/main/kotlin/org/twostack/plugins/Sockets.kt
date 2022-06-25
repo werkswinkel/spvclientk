@@ -16,10 +16,6 @@ import org.twostack.P2PClient
 
 fun Application.configureSockets() {
 
-    val client = P2PClient("127.0.0.1", 18444)
-    async {
-        client.start()
-    }
 
 }
 
