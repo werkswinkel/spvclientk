@@ -4,6 +4,7 @@ import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.twostack.bitcoin4j.Sha256Hash
@@ -48,7 +49,9 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
                         try {
                             // read the 24-byte header
                             val headerBytes = ByteArray(24)
-                            receiveChannel.readFully(headerBytes, 0, 24)
+                            async {
+                                receiveChannel.readFully(headerBytes, 0, 24)
+                            }.await()
 
                             //deserialize the header
                             header = MessageHeader.fromByteArray(headerBytes)
@@ -59,7 +62,9 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
                             if (header.hasPayload()) {
                                 //read the payload bytes as specified by the header
                                 val payloadBytes = ByteArray(header.payloadSize.toInt())
-                                receiveChannel.readFully(payloadBytes, 0, header.payloadSize.toInt())
+                                async {
+                                    receiveChannel.readFully(payloadBytes, 0, header.payloadSize.toInt())
+                                }.await()
 
 
                                 //look at checksum
@@ -68,7 +73,9 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
                                     println("WARNING! Header checksums don't match!")
                                 }
                                 //dispatch the message-specific payload read
-                                handleMessage(writeChannel, header, payloadBytes)
+                                async {
+                                    handleMessage(writeChannel, header, payloadBytes)
+                                }.await()
                                 println("Bytes left after payload read:[ ${receiveChannel.availableForRead} ]\n")
 
                             }
