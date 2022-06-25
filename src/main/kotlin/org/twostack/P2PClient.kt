@@ -29,7 +29,9 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
             println("The P2PClient main thread : ${Thread.currentThread()}")
 
             val selectorManager = SelectorManager(Dispatchers.IO)
-            val socket = aSocket(selectorManager).tcp().connect(remoteHost, remotePort)
+            val socket = async {
+                aSocket(selectorManager).tcp().connect(remoteHost, remotePort)
+            }.await()
 
             socket.attachForWriting(writeChannel) // = socket.openWriteChannel(true)
             socket.attachForReading(receiveChannel) // = socket.openReadChannel()
