@@ -12,8 +12,10 @@ import org.twostack.bitcoin4j.Utils
 import org.twostack.message.MessageHeader
 import org.twostack.message.P2PMessage
 import org.twostack.message.headers.BlockHeaderPayload
+import org.twostack.message.merkleblock.MerkleBlockPayload
 import org.twostack.message.pong.PongMessage
 import org.twostack.message.pong.PongPayload
+import org.twostack.message.transaction.TransactionPayload
 import org.twostack.message.version.VersionMessage
 import org.twostack.message.version.VersionPayload
 import org.twostack.net.RegTestParams
@@ -127,6 +129,7 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
             MessageHeader.SENDHEADERS -> println("MSG: sendheaders message")
             MessageHeader.MERKLE_BLOCK -> {
                 println("MSG: merkleblock message")
+                MerkleBlockPayload.fromByteArray(payload)
             }
             MessageHeader.NOT_FOUND -> {
                 println("MSG: notfound. I don't have what you're looking for. ")
@@ -135,8 +138,7 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
             MessageHeader.HEADERS -> {
 
                 println("MSG: receiving headers ")
-//                    val blockHeaders = BlockHeaderPayload.fromByteArray(payload)
-
+                val blockHeaders = BlockHeaderPayload.fromByteArray(payload)
 //                println(HEX.encode(payload))
 
             }
@@ -156,6 +158,7 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
             MessageHeader.INVENTORY -> println("MSG: here's an inventory !")
             MessageHeader.TRANSACTION -> {
                 println("MSG: Here's the transaction you asked for")
+                TransactionPayload.fromByteArray(payload)
             }
             MessageHeader.GET_UTXOS -> {
                 println("MSG: Here's the UTXO you requested")
