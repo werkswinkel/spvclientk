@@ -18,7 +18,8 @@ fun Route.socketRouting(p2pClient: P2PClient) {
     route("/tx") {
         get {
             //call.respond(SomeContainer)
-            call.respond("Yo, wassup")
+            getTx(p2pClient)
+            call.respond("Yo, tx message sent")
         }
         get("{id?}") {
             call.respond("Yo, wassup : ${call.parameters["id"]}")
@@ -50,7 +51,19 @@ suspend fun getData(p2pClient: P2PClient) {
         InventoryType.MSG_FILTERED_BLOCK,
         HEX.decode("74abe123d6cccb7310c6ddde974d26dc0c08fe0358d1688deada2f9a68ff18fb").reversedArray()
     )
-//                    val inventory = Inventory(InventoryType.MSG_TX, HEX.decode("678940c939f372e86028b17dfaddacccdb5b8dc3338ae15ea0130acd91fb6eff").reversedArray())
+    val invItems = listOf<Inventory>(inventory)
+    val invPayload = InventoryPayload(invItems)
+    val getDataMessage = GetDataMessage(invPayload)
+    p2pClient.sendMessage(getDataMessage)
+}
+
+suspend fun getTx(p2pClient: P2PClient) {
+
+    //followed by a getdata message
+    val inventory = Inventory(
+        InventoryType.MSG_TX,
+        HEX.decode("678940c939f372e86028b17dfaddacccdb5b8dc3338ae15ea0130acd91fb6eff").reversedArray()
+    )
     val invItems = listOf<Inventory>(inventory)
     val invPayload = InventoryPayload(invItems)
     val getDataMessage = GetDataMessage(invPayload)
