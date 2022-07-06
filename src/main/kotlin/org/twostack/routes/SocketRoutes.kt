@@ -8,6 +8,9 @@ import org.twostack.bitcoin4j.Utils.HEX
 import org.twostack.dto.Hello
 import org.twostack.message.Inventory
 import org.twostack.message.InventoryType
+import org.twostack.message.bloomfilter.BloomFilter
+import org.twostack.message.filter.FilterLoadMessage
+import org.twostack.message.filter.FilterLoadPayload
 import org.twostack.message.getdata.GetDataMessage
 import org.twostack.message.getheaders.GetHeadersMessage
 import org.twostack.message.getheaders.GetHeadersPayload
@@ -29,12 +32,26 @@ fun Route.socketRouting(p2pClient: P2PClient) {
             getHeaders(p2pClient)
             call.respond("getHeaders message sent")
         }
-        get("/somedata") {
+        get ("/setfilter/{txId}"){
+            println("setting filter for Tx : ${call.parameters["txId"]}")
+            setFilter(p2pClient, call.parameters["txId"].toString())
+            call.respond("FilterLoadMessage sent")
+        }
+        get("/getdata/{blockId}/{txId}") {
             println("sending getData message")
-            getData(p2pClient)
+            val blockId = call.parameters["blockId"].toString()
+            val txId = call.parameters["txId"].toString()
+            getData(p2pClient, blockId, txId)
             call.respond("getData message sent")
         }
     }
+}
+
+suspend fun setFilter(p2pClient: P2PClient, txId: String){
+    val filter = BloomFilter(1, 0.01,2147483649L )
+    filter.insert(HEX.decode(txId).reversedArray())
+    val filterMessage = FilterLoadMessage(FilterLoadPayload(filter))
+    p2pClient.sendMessage(filterMessage)
 }
 
 suspend fun getHeaders(p2pClient: P2PClient) {
@@ -44,14 +61,20 @@ suspend fun getHeaders(p2pClient: P2PClient) {
     p2pClient.sendMessage(headermessage)
 }
 
-suspend fun getData(p2pClient: P2PClient) {
+suspend fun getData(p2pClient: P2PClient, blockId: String, txId: String) {
 
     //followed by a getdata message
-    val inventory = Inventory(
+    val blockInv = Inventory(
         InventoryType.MSG_FILTERED_BLOCK,
-        HEX.decode("74abe123d6cccb7310c6ddde974d26dc0c08fe0358d1688deada2f9a68ff18fb").reversedArray()
+        HEX.decode(blockId).reversedArray()
     )
-    val invItems = listOf<Inventory>(inventory)
+
+    val txInv= Inventory(
+        InventoryType.MSG_TX,
+        HEX.decode(txId).reversedArray()
+    )
+
+    val invItems = listOf<Inventory>(blockInv, txInv)
     val invPayload = InventoryPayload(invItems)
     val getDataMessage = GetDataMessage(invPayload)
     p2pClient.sendMessage(getDataMessage)
@@ -62,7 +85,7 @@ suspend fun getTx(p2pClient: P2PClient) {
     //followed by a getdata message
     val inventory = Inventory(
         InventoryType.MSG_TX,
-        HEX.decode("678940c939f372e86028b17dfaddacccdb5b8dc3338ae15ea0130acd91fb6eff").reversedArray()
+        HEX.decode("a38b3b397e1fe6eba49180fb21d4207732424e3d0a50d9f16deb0d707a540d62").reversedArray()
     )
     val invItems = listOf<Inventory>(inventory)
     val invPayload = InventoryPayload(invItems)

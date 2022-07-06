@@ -9,9 +9,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.twostack.bitcoin4j.Sha256Hash
 import org.twostack.bitcoin4j.Utils
+import org.twostack.bitcoin4j.Utils.HEX
 import org.twostack.message.MessageHeader
 import org.twostack.message.P2PMessage
 import org.twostack.message.headers.BlockHeaderPayload
+import org.twostack.message.merkleblock.FilteredBlock
 import org.twostack.message.merkleblock.MerkleBlockPayload
 import org.twostack.message.pong.PongMessage
 import org.twostack.message.pong.PongPayload
@@ -19,7 +21,6 @@ import org.twostack.message.transaction.TransactionPayload
 import org.twostack.message.version.VersionMessage
 import org.twostack.message.version.VersionPayload
 import org.twostack.net.RegTestParams
-import java.io.ByteArrayOutputStream
 
 class P2PClient(val remoteHost: String, val remotePort: Int) {
 
@@ -130,6 +131,8 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
             MessageHeader.MERKLE_BLOCK -> {
                 println("MSG: merkleblock message")
                 MerkleBlockPayload.fromByteArray(payload)
+//                val filteredBlock = FilteredBlock(payload)
+
             }
             MessageHeader.NOT_FOUND -> {
                 println("MSG: notfound. I don't have what you're looking for. ")
