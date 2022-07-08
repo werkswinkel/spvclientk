@@ -6,13 +6,13 @@ import org.twostack.bitcoin4j.exception.ProtocolException
 import org.twostack.bitcoin4j.exception.VerificationException
 import org.twostack.bitcoin4j.params.NetworkParameters
 import org.twostack.bitcoin4j.transaction.Transaction
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.OutputStream
 import java.util.*
 
 class FilteredBlock {
-    /*
     private var header: Block? = null
 
     private var merkleTree: PartialMerkleTree? = null
@@ -22,32 +22,33 @@ class FilteredBlock {
     // These were relayed as a part of the filteredblock getdata, ie likely weren't previously received as loose transactions
     private val associatedTransactions: MutableMap<Sha256Hash, Transaction> = HashMap<Sha256Hash, Transaction>()
 
-    @Throws(ProtocolException::class)
-    fun FilteredBlock(payloadBytes: ByteArray) {
-        super(params, payloadBytes, 0)
+    constructor(payloadBytes: ByteArray) {
+        parse(payloadBytes)
     }
 
-//    fun FilteredBlock(params: NetworkParameters?, header: Block?, pmt: PartialMerkleTree?) {
-//        super(params)
-//        this.header = header
-//        merkleTree = pmt
-//    }
+    constructor(header: Block, pmt: PartialMerkleTree) {
+        this.header = header
+        merkleTree = pmt
+    }
 
-    @Throws(IOException::class)
     fun serialize() : ByteArray{
         val stream = ByteArrayOutputStream()
-        if (header.getTransactions() == null) header.bitcoinSerializeToStream(stream) else header.cloneAsHeader()
-            .bitcoinSerializeToStream(stream)
-        merkleTree.bitcoinSerializeToStream(stream)
+        stream.write(header!!.bitcoinSerialize())
+
+        stream.write(merkleTree!!.serialize())
+
+        return stream.toByteArray()
     }
 
-    @Throws(ProtocolException::class)
-    protected fun parse() {
-        val headerBytes = ByteArray(Block.HEADER_SIZE)
-        System.arraycopy(payload, 0, headerBytes, 0, Block.HEADER_SIZE)
-        header = params.getDefaultSerializer().makeBlock(headerBytes)
-        merkleTree = PartialMerkleTree(params, payload, Block.HEADER_SIZE)
-        length = Block.HEADER_SIZE + merkleTree.getMessageSize()
+    fun parse(payload: ByteArray) {
+//        val headerBytes = ByteArray(Block.HEADER_SIZE)
+        val bis = ByteArrayInputStream(payload)
+
+        val headerBytes = bis.readNBytes(Block.HEADER_SIZE)
+//        System.arraycopy(payload, 0, headerBytes, 0, Block.HEADER_SIZE)
+
+        header = Block(headerBytes);
+        merkleTree = PartialMerkleTree(bis.readAllBytes())
     }
 
     /**
@@ -58,8 +59,8 @@ class FilteredBlock {
     @Throws(VerificationException::class)
     fun getTransactionHashes(): List<Sha256Hash?> {
         if (cachedTransactionHashes != null) return Collections.unmodifiableList(cachedTransactionHashes)
-        val hashesMatched: List<Sha256Hash> = LinkedList<Sha256Hash>()
-        return if (header.getMerkleRoot().equals(merkleTree.getTxnHashAndMerkleRoot(hashesMatched))) {
+        val hashesMatched: MutableList<Sha256Hash> = LinkedList<Sha256Hash>()
+        return if (header!!.getMerkleRoot().equals(merkleTree!!.getTxnHashAndMerkleRoot(hashesMatched))) {
             cachedTransactionHashes = hashesMatched
             Collections.unmodifiableList(cachedTransactionHashes)
         } else throw VerificationException("Merkle root of block header does not match merkle root of partial merkle tree.")
@@ -68,13 +69,13 @@ class FilteredBlock {
     /**
      * Gets a copy of the block header
      */
-    fun getBlockHeader(): Block? {
-        return header.cloneAsHeader()
-    }
+//    fun getBlockHeader(): Block? {
+//        return header.cloneAsHeader()
+//    }
 
     /** Gets the hash of the block represented in this Filtered Block  */
     fun getHash(): Sha256Hash {
-        return header.getHash()
+        return header!!.hash
     }
 
     /**
@@ -103,14 +104,14 @@ class FilteredBlock {
 
     /** Number of transactions in this block, before it was filtered  */
     fun getTransactionCount(): Int {
-        return merkleTree.getTransactionCount()
+        return merkleTree!!.transactionCount
     }
 
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
         if (o == null || javaClass != o.javaClass) return false
         val other = o as FilteredBlock
-        return associatedTransactions == other.associatedTransactions && header.equals(other.header) && merkleTree.equals(
+        return associatedTransactions == other.associatedTransactions && header!!.equals(other.header) && merkleTree!!.equals(
             other.merkleTree
         )
     }
@@ -119,8 +120,8 @@ class FilteredBlock {
         return Objects.hash(associatedTransactions, header, merkleTree)
     }
 
-    override fun toString(): String? {
+    override fun toString(): String {
         return "FilteredBlock{merkleTree=$merkleTree, header=$header}"
     }
-*/
+
 }
