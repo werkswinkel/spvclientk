@@ -137,6 +137,8 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
 
                 val mtree = filteredBlock.getPartialMerkleTree()
 
+                val hashes = filteredBlock.getTransactionHashes()
+
                 println("mtree tx count: ${mtree?.transactionCount}")
 
             }

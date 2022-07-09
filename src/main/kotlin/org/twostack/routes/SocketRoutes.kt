@@ -69,12 +69,12 @@ suspend fun getData(p2pClient: P2PClient, blockId: String, txId: String) {
         HEX.decode(blockId).reversedArray()
     )
 
-    val txInv= Inventory(
-        InventoryType.MSG_TX,
-        HEX.decode(txId).reversedArray()
-    )
+//    val txInv= Inventory(
+//        InventoryType.MSG_TX,
+//        HEX.decode(txId).reversedArray()
+//    )
 
-    val invItems = listOf<Inventory>(blockInv, txInv)
+    val invItems = listOf<Inventory>(blockInv)
     val invPayload = InventoryPayload(invItems)
     val getDataMessage = GetDataMessage(invPayload)
     p2pClient.sendMessage(getDataMessage)
