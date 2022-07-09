@@ -131,7 +131,13 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
             MessageHeader.MERKLE_BLOCK -> {
                 println("MSG: merkleblock message")
                 MerkleBlockPayload.fromByteArray(payload)
-//                val filteredBlock = FilteredBlock(payload)
+                val filteredBlock = FilteredBlock(payload)
+
+                println("Filtered Blockhash ${filteredBlock.getHash().toString()}")
+
+                val mtree = filteredBlock.getPartialMerkleTree()
+
+                println("mtree tx count: ${mtree?.transactionCount}")
 
             }
             MessageHeader.NOT_FOUND -> {

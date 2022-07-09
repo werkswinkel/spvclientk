@@ -41,9 +41,8 @@ class MerkleBlockPayload(
             val flagCount = VarInt.fromStream(stream)
             val flagBuffer = HEX.encode(stream.readAllBytes())
 
-            val bitString = BigInteger(flagBuffer, 16).toString(2)
-
-            println(bitString)
+//            val bitString = BigInteger(flagBuffer, 16).toString(2)
+//            println(bitString)
             return MerkleBlockPayload(blockHeader, txCount, hashList, flagCount.longValue(), flagBuffer)
         }
 

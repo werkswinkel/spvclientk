@@ -49,7 +49,7 @@ fun Route.socketRouting(p2pClient: P2PClient) {
 
 suspend fun setFilter(p2pClient: P2PClient, txId: String){
     val filter = BloomFilter(1, 0.01,2147483649L )
-    filter.insert(HEX.decode(txId).reversedArray())
+    filter.insert(HEX.decode(txId))
     val filterMessage = FilterLoadMessage(FilterLoadPayload(filter))
     p2pClient.sendMessage(filterMessage)
 }

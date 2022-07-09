@@ -131,7 +131,7 @@ class BloomFilter {
         return stream.toByteArray()
     }
 
-    private fun rotateLeft32(x: Long , r: Int): Long {
+    private fun rotateLeft32(x: Int, r: Int): Int {
         return x shl r or (x ushr 32 - r)
     }
     /**
@@ -141,36 +141,36 @@ class BloomFilter {
 
 
     private fun murmurHash3(data: ByteArray, nTweak: Long, hashNum: Int, buffer: ByteArray): Int {
-        var h1 = (hashNum * 0xFBA4C795L + nTweak)
-        val c1 = 0xcc9e2d51L
-        val c2 = 0x1b873593L
+        var h1 : Int = (hashNum * 0xFBA4C795 + nTweak).toInt()
+        val c1 : Int = (0xcc9e2d51).toInt()
+        val c2 : Int = (0x1b873593).toInt()
 
         val numBlocks = buffer.size / 4 * 4
         // body
         var i = 0
         while (i < numBlocks) {
-            var k1 : Long = buffer[i].toLong() and 0xFF or
-                    (buffer[i + 1].toLong() and 0xFF shl 8) or
-                    (buffer[i + 2].toLong() and 0xFF shl 16) or
-                    (buffer[i + 3].toLong() and 0xFF shl 24)
+            var k1 : Int = buffer[i].toInt() and 0xFF or
+                    (buffer[i + 1].toInt() and 0xFF shl 8) or
+                    (buffer[i + 2].toInt() and 0xFF shl 16) or
+                    (buffer[i + 3].toInt() and 0xFF shl 24)
             k1 *= c1
             k1 = rotateLeft32(k1, 15)
             k1 *= c2
             h1 = h1 xor k1
             h1 = rotateLeft32(h1, 13)
-            h1 = h1 * 5 + -0x19ab949c
+            h1 = h1 * 5 + (0xe6546b64).toInt()
             i += 4
         }
-        var k1 = 0L
+        var k1 = 0
         when (buffer.size and 3) {
             3 -> {
-                k1 = k1 xor (buffer[numBlocks + 2].toLong() and 0xff) shl 16
+                k1 = k1 xor (buffer[numBlocks + 2].toInt() and 0xff) shl 16
             }
             2 -> {
-                k1 = k1 xor (buffer[numBlocks + 1].toLong() and 0xff) shl 8
+                k1 = k1 xor (buffer[numBlocks + 1].toInt() and 0xff) shl 8
             }
             1 -> {
-                k1 = k1 xor (buffer[numBlocks].toLong() and 0xff)
+                k1 = k1 xor (buffer[numBlocks].toInt() and 0xff)
                 k1 *= c1
                 k1 = rotateLeft32(k1, 15)
                 k1 *= c2
@@ -180,15 +180,14 @@ class BloomFilter {
         }
 
         // finalization
-        h1 = h1 xor buffer.size.toLong()
+        h1 = h1 xor buffer.size.toInt()
         h1 = h1 xor (h1 ushr 16)
-        h1 *= 0x85ebca6b
+        h1 *= (0x85ebca6b).toInt()
         h1 = h1 xor (h1 ushr 13)
-        h1 *= 0xc2b2ae35
+        h1 *= (0xc2b2ae35).toInt()
         h1 = h1 xor (h1 ushr 16)
 
-        //FIXME: Narrowing here could lose data. Need some test cases
-        return ((h1 and 0xFFFFFFFFL) % (data.size * 8)).toInt()
+        return ((h1.toLong() and 0xFFFFFFFFL) % (data.size * 8)).toInt()
     }
     /**
      * Returns true if the given object matches the filter either because it was inserted, or because we have a
@@ -205,7 +204,9 @@ class BloomFilter {
     /** Insert the given arbitrary data into the filter  */
     @Synchronized
     fun insert(buffer: ByteArray) {
-        for (i in 0 until hashFuncs) Utils.setBitLE(data, murmurHash3(data, nTweak, i.toInt(), buffer))
+        for (i in 0 until hashFuncs) {
+            Utils.setBitLE(data, murmurHash3(data, nTweak, i.toInt(), buffer))
+        }
     }
 
     /**
