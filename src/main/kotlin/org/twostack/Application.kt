@@ -18,7 +18,7 @@ import org.twostack.plugins.configureSockets
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
-fun Application.module(){
+fun Application.module() {
 
     val client = P2PClient("127.0.0.1", 18444)
     async {

@@ -126,6 +126,7 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
                 response.setPayloadParams(Sha256Hash.hashTwice(ByteArray(0)), 0u)
                 writeChannel.writeFully(response.serialize())
             }
+
             MessageHeader.VERSION_ACK -> println("MSG: verack message")
             MessageHeader.SENDHEADERS -> println("MSG: sendheaders message")
             MessageHeader.MERKLE_BLOCK -> {
@@ -142,9 +143,11 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
                 println("mtree tx count: ${mtree?.transactionCount}")
 
             }
+
             MessageHeader.NOT_FOUND -> {
                 println("MSG: notfound. I don't have what you're looking for. ")
             }
+
             MessageHeader.GET_HEADERS -> println("getheaders message")
             MessageHeader.HEADERS -> {
 
@@ -153,6 +156,7 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
 //                println(HEX.encode(payload))
 
             }
+
             MessageHeader.GET_ADDR -> println("getaddress message")
             MessageHeader.PING -> {
                 println("MSG: responding to ping with a pong")
@@ -163,6 +167,7 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
 
 
             }
+
             MessageHeader.PONG -> println("MSG: pong message")
             MessageHeader.FEE_FILTER -> println("MSG: feefilter message")
             MessageHeader.BLOCK -> println("MSG: new block found !")
@@ -171,15 +176,19 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
                 println("MSG: Here's the transaction you asked for")
                 TransactionPayload.fromByteArray(payload)
             }
+
             MessageHeader.GET_UTXOS -> {
                 println("MSG: Here's the UTXO you requested")
             }
+
             MessageHeader.FILTER_LOAD -> {
                 println("MSG: receiving filter load message")
             }
+
             MessageHeader.FEE_FILTER -> {
                 println("MSG: received a fee filter message")
             }
+
             else -> {
                 println("I don't understand that message: ${header.commandString}")
             }

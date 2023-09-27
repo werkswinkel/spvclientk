@@ -32,7 +32,7 @@ fun Route.socketRouting(p2pClient: P2PClient) {
             getHeaders(p2pClient)
             call.respond("getHeaders message sent")
         }
-        get ("/setfilter/{txId}"){
+        get("/setfilter/{txId}") {
             println("setting filter for Tx : ${call.parameters["txId"]}")
             setFilter(p2pClient, call.parameters["txId"].toString())
             call.respond("FilterLoadMessage sent")
@@ -47,8 +47,8 @@ fun Route.socketRouting(p2pClient: P2PClient) {
     }
 }
 
-suspend fun setFilter(p2pClient: P2PClient, txId: String){
-    val filter = BloomFilter(1, 0.01,2147483649L )
+suspend fun setFilter(p2pClient: P2PClient, txId: String) {
+    val filter = BloomFilter(1, 0.01, 2147483649L)
     filter.insert(HEX.decode(txId))
     val filterMessage = FilterLoadMessage(FilterLoadPayload(filter))
     p2pClient.sendMessage(filterMessage)
