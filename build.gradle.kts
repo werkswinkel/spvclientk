@@ -24,7 +24,7 @@ repositories {
 
 dependencies {
 
-    implementation("org.twostack:bitcoin4j:1.6.5")
+    implementation("org.twostack:bitcoin4j:1.6.7")
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-server-core-jvm:2.3.4")
     implementation("io.ktor:ktor-server-netty-jvm:2.3.4")
