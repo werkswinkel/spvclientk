@@ -103,6 +103,9 @@ class P2PClient(val remoteHost: String, val remotePort: Int) {
         //start the handshake
         val versionPayload = VersionPayload(RegTestParams());
         val versionMessage = VersionMessage(versionPayload)
+        println("BEGIN");
+        println(HEX.encode(versionMessage.serialize()));
+        println("END");
         sendMessage(versionMessage)
 
     }

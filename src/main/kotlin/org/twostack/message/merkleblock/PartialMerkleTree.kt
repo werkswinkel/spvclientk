@@ -93,7 +93,6 @@ class PartialMerkleTree {
         matchedChildBits = bis.readNBytes(nFlagBytes)
     }
 
-    protected fun parseLite() {}
     private class ValuesUsed {
         var bitsUsed = 0
         var hashesUsed = 0
